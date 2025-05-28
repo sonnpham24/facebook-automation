@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Công cụ tự động quản trị Facebook</title>
+  <style>
+    /* ===== Biến màu sắc ===== */
+    :root {
+      --primary: #3A2E8C;   /* Tím than */
+      --secondary: #00C4CC; /* Xanh ngọc */
+      --light: #FFFFFF;     /* Trắng */
+      --text-dark: #2D3748; /* Xám đậm */
+      --text-light: #F8F9FA;/* Trắng sáng */
+    }
+
+    /* ===== Reset CSS ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      background-color: #F5F7FA;
+      color: var(--text-dark);
+    }
+
+    /* ===== Navbar ===== */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 3rem;
+      background: var(--light);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .nav-links a {
+      color: var(--text-dark);
+      text-decoration: none;
+      font-weight: 500;
+      position: relative;
+      padding: 0.5rem 0;
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--secondary);
+      transition: width 0.3s;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .auth-btn {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: var(--light);
+      border: none;
+      padding: 0.7rem 1.8rem;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(58, 46, 140, 0.2);
+    }
+
+    .auth-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(58, 46, 140, 0.3);
+    }
+
+    /* ===== Main Content ===== */
+    .container {
+      padding: 3rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ===== Form Styles ===== */
+    .post-form {
+      background: var(--light);
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+      margin-top: 2rem;
+    }
+
+    .post-form h2 {
+      color: var(--primary);
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+    }
+
+    .post-form textarea {
+      width: 100%;
+      padding: 1.2rem;
+      border: 2px solid #EDF2F7;
+      border-radius: 12px;
+      resize: vertical;
+      min-height: 180px;
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      transition: border 0.3s;
+    }
+
+    .post-form textarea:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+
+    .post-form input[type="text"] {
+      width: 100%;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border: 2px solid #EDF2F7;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: border 0.3s;
+    }
+
+    .post-form input[type="text"]:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+
+    .post-form button {
+      background: var(--primary);
+      color: var(--light);
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+    }
+
+    .post-form button:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+    }
+
+    /* ===== Status Messages ===== */
+    .status {
+      margin: 1.5rem 0;
+      padding: 1.2rem;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .success {
+      background-color: #E6FFFA;
+      color: #065666;
+      border-left: 4px solid #00C4CC;
+    }
+
+    .error {
+      background-color: #FFF5F5;
+      color: #C53030;
+      border-left: 4px solid #F56565;
+    }
+
+    /* ===== Auth Status ===== */
+    .auth-success {
+      background: linear-gradient(135deg, #00C4CC, #3A2E8C);
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .auth-success::before {
+      content: "✓";
+      font-weight: bold;
+    }
+
+    .upload-options {
+    margin-bottom: 1.5rem;
+  }
+  
+  .option {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #EDF2F7;
+    border-radius: 8px;
+    transition: all 0.3s;
+  }
+  
+  .option:hover {
+    border-color: var(--secondary);
+  }
+  
+  .option input[type="radio"] {
+    margin-right: 0.5rem;
+  }
+  
+  .url-input {
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    border: 1px solid #EDF2F7;
+    border-radius: 6px;
+    display: block;
+  }
+  
+  .upload-btn {
+    background: var(--light);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .upload-btn:hover {
+    background: var(--primary);
+    color: var(--light);
+  }
+  
+  #fileName {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+  }
+
+  #fileInfo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+  }
+  
+  #fileInfo span {
+    display: block;
+    margin-bottom: 4px;
+  }
+  
+  #previewContainer {
+    max-width: 100%;
+    margin-top: 10px;
+  }
+  
+  #previewContainer img, #previewContainer video {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    display: block;
+    margin-top: 10px;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .scheduled-container {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .scheduled-item {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .scheduled-item:last-child {
+    border-bottom: none;
+  }
+  
+  .scheduled-info {
+    flex: 1;
+  }
+  
+  .scheduled-time {
+    font-weight: bold;
+    color: var(--primary);
+  }
+  
+  .scheduled-status {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+  
+  .status-scheduled {
+    background: #fff3cd;
+    color: #856404;
+  }
+  
+  .status-posted {
+    background: #d4edda;
+    color: #155724;
+  }
+  
+  .status-failed {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .comment-management {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .template-form textarea {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+  
+  .template-list ul {
+    list-style: none;
+    margin-top: 1rem;
+  }
+  
+  .template-list li {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .auto-comment {
+    margin-top: 2rem;
+  }
+  
+  #postIdInput {
+    width: 100%;
+    padding: 0.8rem;
+    margin: 1rem 0;
+  }
+
+  /* Comment Template Styles */
+  .template-content {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  .template-actions {
+    margin-left: 1rem;
+  }
+
+  .btn-delete {
+    padding: 0.3rem 0.6rem;
+    background: #f8d7da;
+    color: #721c24;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .btn-delete:hover {
+    background: #f5c6cb;
+  }
+
+  .template-list li {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .template-list li:last-child {
+    border-bottom: none;
+  }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand">Auto Marketing</div>
+    
+    <div class="nav-links">
+      <a href="#">Quản lý tài khoản</a>
+      <a href="#">Đăng bài</a>
+      <a href="#">Tương tác</a>
+    </div>
+    
+    <a href="/auth/facebook" class="auth-btn" id="authButton">
+      Xác thực với Facebook
+    </a>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div id="authStatus" class="status"></div>
+
+    <div id="result" class="status"></div>
+    
+    <div class="post-form">
+      <h2>Quản lý tài khoản seeding</h2>
+      <a href="/auth/user" class="submit-btn" style="display: inline-block; width: auto;">Thêm tài khoản Facebook</a>
+      <div id="userAccounts" style="margin-top: 1.5rem;"></div>
+    </div>    
+
+    <div class="post-form">
+      <h2>Tạo bài đăng mới</h2>
+      <form id="postForm" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="postType">Loại đăng bài:</label>
+          <select id="postType" name="postType" class="form-control">
+            <option value="now">Đăng bài ngay</option>
+            <option value="schedule">Hẹn lịch đăng bài</option>
+          </select>
+        </div>
+    
+        <div id="scheduleFields" style="display: none;">
+          <div class="form-group">
+            <label for="scheduled_time">Thời gian đăng:</label>
+            <input type="datetime-local" id="scheduled_time" name="scheduled_time" class="form-control">
+          </div>
+        </div>
+    
+        <textarea name="message" placeholder="Nội dung bài đăng..."></textarea>
+        
+        <div class="upload-options">
+          <div class="option">
+            <input type="radio" id="urlOption" name="uploadType" value="url" checked>
+            <label for="urlOption">Dùng URL phương tiện</label>
+            <input type="text" name="mediaUrl" placeholder="Dán URL ảnh/video" class="url-input">
+          </div>
+          
+          <div class="option">
+            <input type="radio" id="uploadOption" name="uploadType" value="upload">
+            <label for="uploadOption">Tải lên từ thiết bị</label>
+            <input type="file" id="fileInput" name="media" accept="image/*,video/*" style="display: none;">
+            <button type="button" id="uploadBtn" class="upload-btn">Chọn file</button>
+            <div id="fileInfo">
+              <span id="fileName">Chưa chọn file</span>
+              <span id="fileSize"></span>
+              <span id="fileType"></span>
+            </div>
+            <div id="previewContainer" style="margin-top: 10px;">
+              <!-- Preview sẽ hiển thị ở đây -->
+            </div>
+          </div>
+        </div>
+        
+        <button type="submit" class="submit-btn">Đăng bài ngay</button>
+      </form>
+    </div>
+
+    <div id="scheduledPosts" class="scheduled-container">
+      <h3>Bài đăng đã lên lịch</h3>
+      <div id="scheduledList"></div>
+    </div>
+
+    <div class="post-form comment-management">
+      <h2>Quản lý Comment Mẫu</h2>
+      
+      <div class="template-form">
+        <textarea id="newTemplate" class="form-control" placeholder="Nhập nội dung comment mẫu..."></textarea>
+        <button id="addTemplateBtn" class="submit-btn">Thêm mẫu</button>
+      </div>
+      
+      <div class="template-list">
+        <h3>Danh sách comment mẫu</h3>
+        <ul id="templatesList"></ul>
+      </div>
+      
+      <div class="auto-comment">
+        <h3>Tự động comment</h3>
+        <select id="postSelector" class="form-control">
+          <option disabled selected>-- Chọn bài đăng muốn comment --</option>
+        </select>        
+        <button id="autoCommentBtn" class="submit-btn">Comment tự động</button>
+        <div id="commentResult" class="status" style="margin-top: 1rem;"></div>
+      </div>
+      <div class="form-group">
+        <button id="autoLikeBtn" class="submit-btn" style="margin-top: 1rem; background: #3a8c4a;">Like bài viết</button>
+        <button id="autoShareBtn" class="submit-btn" style="margin-top: 1rem; background: #007bff;">Share bài viết</button>
+      </div>      
+    </div>
+  </div>
+
+  <script>
+    // Xử lý quản lý tài khoản
+    async function loadUserAccounts() {
+      try {
+        const res = await fetch('/api/user-accounts');
+        const users = await res.json();
+
+        const container = document.getElementById('userAccounts');
+        if (users.length === 0) {
+          container.innerHTML = '<p>Chưa có tài khoản nào.</p>';
+          return;
+        }
+
+        container.innerHTML = '<ul>' + users.map(u => `
+          <li style="margin-bottom: 10px;">
+            <img src="${u.avatar}" width="30" height="30" style="border-radius:50%; margin-right:8px;">
+            ${u.name} — <code>${u.facebookUserId}</code>
+          </li>
+        `).join('') + '</ul>';
+      } catch (err) {
+        console.error('Lỗi tải tài khoản:', err);
+      }
+    }
+
+    loadUserAccounts();
+
+    // Xử lý hiển thị trạng thái xác thực
+    const urlParams = new URLSearchParams(window.location.search);
+    const authStatus = urlParams.get('auth');
+    const authButton = document.getElementById('authButton');
+    
+    if (authStatus === 'success') {
+      document.getElementById('authStatus').className = 'status success';
+      document.getElementById('authStatus').textContent = 'Đã xác thực với Facebook!';
+      authButton.textContent = 'Đã xác thực';
+      authButton.style.backgroundColor = '#4CAF50';
+    } else if (authStatus === 'failed') {
+      document.getElementById('authStatus').className = 'status error';
+      document.getElementById('authStatus').textContent = 'Xác thực thất bại: ' + 
+        decodeURIComponent(urlParams.get('reason') || 'Không rõ nguyên nhân');
+    }
+
+    // Xử lý chọn file và hiển thị preview
+    document.getElementById('uploadBtn').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+    
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const previewContainer = document.getElementById('previewContainer');
+      previewContainer.innerHTML = '';
+      
+      if (file) {
+        document.getElementById('fileName').textContent = `Tên file: ${file.name}`;
+        document.getElementById('fileSize').textContent = `Kích thước: ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+        document.getElementById('fileType').textContent = `Loại: ${file.type}`;
+        
+        // Hiển thị preview
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            previewContainer.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        } else if (file.type.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.controls = true;
+          video.src = URL.createObjectURL(file);
+          previewContainer.appendChild(video);
+        }
+      } else {
+        document.getElementById('fileName').textContent = 'Chưa chọn file';
+        document.getElementById('fileSize').textContent = '';
+        document.getElementById('fileType').textContent = '';
+      }
+    });
+
+    // Xử lý hiển thị form lên lịch
+    document.getElementById('postType').addEventListener('change', function() {
+      const scheduleFields = document.getElementById('scheduleFields');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (this.value === 'schedule') {
+        scheduleFields.style.display = 'block';
+        submitBtn.textContent = 'Lên lịch đăng bài';
+        
+        // Set min datetime cho input (hiện tại + 10 phút)
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 10);
+        document.getElementById('scheduled_time').min = now.toISOString().slice(0, 16);
+      } else {
+        scheduleFields.style.display = 'none';
+        submitBtn.textContent = 'Đăng bài ngay';
+      }
+    });
+
+    // Load danh sách bài đã lên lịch
+    async function loadScheduledPosts() {
+      try {
+        const response = await fetch('/api/scheduled');
+        const posts = await response.json();
+        
+        const listElement = document.getElementById('scheduledList');
+        listElement.innerHTML = '';
+        
+        if (posts.length === 0) {
+          listElement.innerHTML = '<p>Chưa có bài đăng nào được lên lịch</p>';
+          return;
+        }
+        
+        posts.forEach(post => {
+          const postElement = document.createElement('div');
+          postElement.className = 'scheduled-item';
+          
+          const time = new Date(post.scheduled_time).toLocaleString();
+          
+          postElement.innerHTML = `
+            <div class="scheduled-info">
+              <div>${post.message || '(Không có nội dung)'}</div>
+              <div class="scheduled-time">Đăng lúc: ${time}</div>
+            </div>
+            <div class="scheduled-status status-${post.status}">
+              ${post.status === 'scheduled' ? 'Đã lên lịch' : 
+                post.status === 'posted' ? 'Đã đăng' : 'Lỗi'}
+            </div>
+          `;
+          
+          listElement.appendChild(postElement);
+        });
+      } catch (error) {
+        console.error('Lỗi khi tải bài đã lên lịch:', error);
+      }
+    }
+
+    // Xử lý submit form
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
+      const message = formData.get('message');
+      const postType = formData.get('postType');
+      
+      try {
+        let response;
+        if (postType === 'now') {
+          if (uploadType === 'url') {
+            // Gửi yêu cầu đăng bài với URL
+            response = await fetch('/api/post', {
+              method: 'POST',
+              body: JSON.stringify({
+                message: formData.get('message'),
+                mediaUrl: formData.get('mediaUrl')
+              }),
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } else {
+            // Gửi yêu cầu upload file
+            const file = formData.get('media');
+            if (!file || file.size === 0) {
+              throw new Error('Vui lòng chọn file phương tiện');
+            }
+            
+            const uploadFormData = new FormData();
+            uploadFormData.append('message', message);
+            uploadFormData.append('media', file);
+            
+            response = await fetch('/api/upload', {
+              method: 'POST',
+              body: uploadFormData
+            });
+          }
+        } else {
+          // Xử lý lên lịch bài đăng
+          const scheduledTime = formData.get('scheduled_time');
+          if (!scheduledTime) {
+            throw new Error('Vui lòng chọn thời gian đăng bài');
+          }
+          
+          const uploadFormData = new FormData();
+          uploadFormData.append('message', formData.get('message'));
+          uploadFormData.append('scheduled_time', scheduledTime);
+          
+          // Thêm file hoặc URL phương tiện
+          const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
+          if (uploadType === 'upload') {
+            const file = formData.get('media');
+            if (file && file.size > 0) {
+              uploadFormData.append('media', file);
+            }
+          } else {
+            const mediaUrl = formData.get('mediaUrl');
+            if (mediaUrl) {
+              uploadFormData.append('mediaUrl', mediaUrl);
+            }
+          }
+          
+          response = await fetch('/api/schedule', {
+            method: 'POST',
+            body: uploadFormData
+          });
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('result').className = 'status success';
+          if (postType === 'now') {
+            let resultHTML = `
+              <strong>Đăng bài thành công!</strong><br>
+              ID bài đăng: ${data.postId}<br>
+              Loại: ${data.type}
+            `;
+            if (data.type === 'video' && data.duration) {
+              resultHTML += `<br>Thời lượng: ${Math.round(data.duration)} giây`;
+            }
+            document.getElementById('result').innerHTML = resultHTML;
+            
+            e.target.reset();
+            document.getElementById('fileName').textContent = 'Chưa chọn file';
+            document.getElementById('fileSize').textContent = '';
+            document.getElementById('fileType').textContent = '';
+            document.getElementById('previewContainer').innerHTML = '';
+          } else {
+            document.getElementById('result').innerHTML = `
+              <strong>Đã lên lịch bài đăng thành công!</strong><br>
+              ID lịch đăng: ${data.postId}<br>
+              Thời gian đăng: ${new Date(data.scheduled_time).toLocaleString()}
+            `;
+            loadScheduledPosts();
+          }
+          e.target.reset();
+        } else {
+          throw new Error(data.error || 'Đăng bài thất bại');
+        }
+      } catch (error) {
+        document.getElementById('result').className = 'status error';
+        document.getElementById('result').innerHTML = `<strong>Lỗi:</strong> ${error.message}`;
+      }
+    });
+
+    // Tải danh sách bài đã lên lịch khi trang load
+    loadScheduledPosts();
+
+    // Load danh sách comment mẫu
+    async function loadTemplates() {
+      const response = await fetch('/api/comment-templates');
+      const templates = await response.json();
+      
+      const listElement = document.getElementById('templatesList');
+      listElement.innerHTML = '';
+      
+      templates.forEach(template => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span>${template.content}</span>
+          <button onclick="deleteTemplate(${template.id})">Xóa</button>
+        `;
+        listElement.appendChild(li);
+      });
+    }
+
+    // Thêm comment mẫu
+    document.getElementById('addTemplateBtn').addEventListener('click', async () => {
+      const content = document.getElementById('newTemplate').value.trim();
+      if (!content) return;
+      
+      const response = await fetch('/api/comment-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      });
+      
+      if (response.ok) {
+        document.getElementById('newTemplate').value = '';
+        loadTemplates();
+      }
+    });
+
+    // Tự động comment
+    document.getElementById('autoCommentBtn').addEventListener('click', async () => {
+      const postId = document.getElementById('postSelector').value;
+      if (!postId) {
+        alert('Vui lòng chọn bài đăng');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auto-comment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          document.getElementById('commentResult').className = 'status success';
+          document.getElementById('commentResult').innerHTML = `
+            <strong>Comment thành công!</strong><br>
+            Comment ID: ${result.commentId}<br>
+            Template used: ${result.templateUsed}
+          `;
+        } else {
+          throw new Error(result.error || result.details);
+        }
+      } catch (error) {
+        document.getElementById('commentResult').className = 'status error';
+        document.getElementById('commentResult').innerHTML = `
+          <strong>Lỗi:</strong> ${error.message}
+        `;
+      }
+    });
+
+    // Hàm xóa comment mẫu
+    async function deleteTemplate(id) {
+      if (!confirm('Bạn chắc chắn muốn xóa comment mẫu này?')) return;
+      
+      try {
+        const response = await fetch(`/api/comment-templates/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          loadTemplates();
+        } else {
+          throw new Error('Xóa không thành công');
+        }
+      } catch (error) {
+        alert(`Lỗi: ${error.message}`);
+      }
+    }
+
+    // Cập nhật hàm loadTemplates để hiển thị tốt hơn
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/comment-templates');
+        const templates = await response.json();
+        
+        const listElement = document.getElementById('templatesList');
+        listElement.innerHTML = '';
+        
+        if (templates.length === 0) {
+          listElement.innerHTML = '<li>Chưa có comment mẫu nào</li>';
+          return;
+        }
+        
+        templates.forEach(template => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="template-content">${template.content}</div>
+            <div class="template-actions">
+              <button class="btn-delete" onclick="deleteTemplate(${template.id})">Xóa</button>
+            </div>
+          `;
+          listElement.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Lỗi khi tải comment mẫu:', error);
+      }
+    }
+
+    // Load templates khi trang được tải
+    loadTemplates();
+
+    // Load danh sách Posts
+    async function loadPosts() {
+    try {
+      const response = await fetch('/api/page-posts');
+      const posts = await response.json();
+      const selector = document.getElementById('postSelector');
+      selector.innerHTML = '<option disabled selected>-- Chọn bài đăng muốn comment --</option>';
+
+      posts.forEach(post => {
+        const option = document.createElement('option');
+        option.value = post.id;
+        const preview = post.message ? post.message.slice(0, 50).replace(/\n/g, ' ') : '[Không có nội dung]';
+        option.textContent = `${preview} (ID: ${post.id})`;
+        selector.appendChild(option);
+      });
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách post:', err);
+    }
+  }
+
+  loadPosts();
+
+  // Xử lý Like và Share
+  document.getElementById('autoLikeBtn').addEventListener('click', async () => {
+    const postId = document.getElementById('postSelector').value;
+    if (!postId) {
+      alert('Vui lòng chọn bài đăng');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auto-like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert('Đã like bài viết thành công!');
+      } else {
+        throw new Error(result.error || result.details);
+      }
+    } catch (error) {
+      alert('Lỗi khi like bài viết: ' + error.message);
+    }
+  });
+
+  document.getElementById('autoShareBtn').addEventListener('click', async () => {
+    const postId = document.getElementById('postSelector').value;
+    if (!postId) {
+      alert('Vui lòng chọn bài đăng');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auto-share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(`Đã share bài viết thành công! ID mới: ${result.sharedPostId}`);
+      } else {
+        throw new Error(result.error || result.details);
+      }
+    } catch (error) {
+      alert('Lỗi khi share bài viết: ' + error.message);
+    }
+  });
+  </script>
+</body>
+</html>
