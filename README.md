@@ -66,16 +66,18 @@ node server.js
 Truy cập: http://localhost:3000 hoặc https://<ngrok-url>
 
 ## 💡 Tính năng hiện tại
-Tính năng	Trạng thái
-Đăng bài ngay	✅ OK
-Đăng bài theo lịch	✅ OK
-Upload ảnh/video	✅ OK
-Comment mẫu (CRUD)	✅ OK
-Auto comment AI	✅ OK
-Webhook nhận bình luận	✅ OK
-Chatbot AI trả lời bình luận	✅ OK
-Ngăn vòng lặp phản hồi	✅ Đã xử lý
-Đăng nhập Page (OAuth)	✅ OK
+| 🧩 Tính năng                       | ⚙️ Trạng thái   |
+| ---------------------------------- | --------------- |
+| 📝 Đăng bài ngay                   | ✅ Hoạt động tốt |
+| ⏰ Đăng bài theo lịch               | ✅ Hoạt động tốt |
+| 🖼️ Upload ảnh/video               | ✅ Hoạt động tốt |
+| 💬 Quản lý comment mẫu (CRUD)      | ✅ Hoạt động tốt |
+| 🤖 Comment tự động bằng AI         | ✅ Hoạt động tốt |
+| 🔔 Nhận bình luận qua webhook      | ✅ Hoạt động tốt |
+| 🧠 Chatbot AI trả lời comment      | ✅ Hoạt động tốt |
+| 🔁 Ngăn vòng lặp tự phản hồi       | ✅ Đã xử lý      |
+| 🔐 Đăng nhập Facebook Page (OAuth) | ✅ Hoạt động tốt |
+
 
 ## 🔮 Định hướng sắp tới
  Lưu lịch sử phản hồi vào database
