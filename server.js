@@ -76,6 +76,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Biến toàn cục lưu trữ tạm token
 let pageAccessToken = null;
 
+// Biến toàn cục bật/tắt AI chatbot
+let aiReplyEnabled = true; // Mặc định bật
+
 // Trang chủ với form đăng bài
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -646,6 +649,12 @@ app.post('/webhook', (req, res) => {
 
         console.log(`💬 New comment from ${from.name}: "${message}" (commentId: ${commentId})`);
 
+        // Chỉ trả lời nếu AI bật
+        if (!aiReplyEnabled) {
+          console.log("🤖 AI chatbot đang TẮT – Không tự động trả lời comment này.");
+          return;
+        }
+
         // Xử lý trả lời comment
         try {
           // Gửi câu hỏi đến OpenRouter (DeepSeek V3 0324)
@@ -693,6 +702,18 @@ app.post('/webhook', (req, res) => {
   } else {
     res.sendStatus(404);
   }
+});
+
+// API lấy trạng thái bật/tắt AI
+app.get('/api/ai-reply-enabled', (req, res) => {
+  res.json({ enabled: aiReplyEnabled });
+});
+
+// API cập nhật trạng thái bật/tắt AI
+app.post('/api/ai-reply-enabled', express.json(), (req, res) => {
+  const { enabled } = req.body;
+  aiReplyEnabled = !!enabled;
+  res.json({ enabled: aiReplyEnabled });
 });
 
 // Khởi động server
