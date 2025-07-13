@@ -193,13 +193,13 @@ app.post('/api/post', async (req, res) => {
       return res.status(401).json({ error: 'Chưa xác thực với Facebook' });
     }
 
-    const { message, imageUrl } = req.body;
+    const { message, mediaUrl } = req.body;
     
     let postData = { message, access_token: pageAccessToken };
     
     // Nếu có ảnh, đăng bài dạng photo
-    if (imageUrl) {
-      postData.url = imageUrl;
+    if (mediaUrl) {
+      postData.url = mediaUrl;
       const response = await axios.post(
         `https://graph.facebook.com/v19.0/${process.env.PAGE_ID}/photos`,
         postData
