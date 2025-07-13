@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Công cụ tự động quản trị Facebook</title>
-  <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet">
   <style>
     /* ===== Biến màu sắc ===== */
     :root {
@@ -20,7 +20,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Poppins', sans-serif;
+      font-family: 'Roboto', Arial, sans-serif;
     }
 
     body {
@@ -442,6 +442,14 @@
 </head>
 
 <body>
+  <!-- Toast thông báo -->
+  <div id="toast" style="display:none;position:fixed;top:30px;left:50%;transform:translateX(-50%);z-index:9999;
+  min-width:280px;max-width:90vw;padding:16px 28px;border-radius:8px;
+  font-weight:500;box-shadow:0 2px 16px #3332;padding:16px;
+  background:#222;color:#fff;font-size:16px;text-align:center;
+  transition:all 0.3s;">
+  </div>
+
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">Auto Marketing</div>
@@ -458,8 +466,6 @@
 
   <!-- Main Content -->
   <div class="container">
-    <div id="authStatus" class="status"></div>
-
     <div class="post-form" style="margin-bottom: 1.5rem;">
       <h2>Bật/tắt Chatbot AI trả lời bình luận</h2>
       <label class="switch">
@@ -468,8 +474,6 @@
       </label>
       <span id="aiStatus" style="margin-left: 1rem; font-weight: 600;"></span>
     </div>   
-
-    <div id="result" class="status"></div>
 
     <div class="post-form">
       <h2>Tạo bài đăng mới</h2>
@@ -542,7 +546,6 @@
           <option disabled selected>-- Chọn bài đăng muốn comment --</option>
         </select>        
         <button id="autoCommentBtn" class="submit-btn">Comment tự động</button>
-        <div id="commentResult" class="status" style="margin-top: 1rem;"></div>
       </div>
       <div class="form-group">
         <button id="autoLikeBtn" class="submit-btn" style="margin-top: 1rem; background: #3a8c4a;">Like bài viết</button>
@@ -552,45 +555,17 @@
   </div>
 
   <script>
-    // Xử lý quản lý tài khoản
-    async function loadUserAccounts() {
-      try {
-        const res = await fetch('/api/user-accounts');
-        const users = await res.json();
-
-        const container = document.getElementById('userAccounts');
-        if (users.length === 0) {
-          container.innerHTML = '<p>Chưa có tài khoản nào.</p>';
-          return;
-        }
-
-        container.innerHTML = '<ul>' + users.map(u => `
-          <li style="margin-bottom: 10px;">
-            <img src="${u.avatar}" width="30" height="30" style="border-radius:50%; margin-right:8px;">
-            ${u.name} — <code>${u.facebookUserId}</code>
-          </li>
-        `).join('') + '</ul>';
-      } catch (err) {
-        console.error('Lỗi tải tài khoản:', err);
-      }
-    }
-
-    loadUserAccounts();
-
     // Xử lý hiển thị trạng thái xác thực
     const urlParams = new URLSearchParams(window.location.search);
     const authStatus = urlParams.get('auth');
     const authButton = document.getElementById('authButton');
     
     if (authStatus === 'success') {
-      document.getElementById('authStatus').className = 'status success';
-      document.getElementById('authStatus').textContent = 'Đã xác thực với Facebook!';
+      showToast("Đã xác thực với Facebook!", "success");
       authButton.textContent = 'Đã xác thực';
       authButton.style.backgroundColor = '#4CAF50';
     } else if (authStatus === 'failed') {
-      document.getElementById('authStatus').className = 'status error';
-      document.getElementById('authStatus').textContent = 'Xác thực thất bại: ' + 
-        decodeURIComponent(urlParams.get('reason') || 'Không rõ nguyên nhân');
+      showToast("Xác thực với Facebook thất bại!", "error");
     }
 
     // Xử lý chọn file và hiển thị preview
@@ -758,38 +733,37 @@
         const data = await response.json();
         
         if (data.success) {
-          document.getElementById('result').className = 'status success';
+          let toastMsg = "";
           if (postType === 'now') {
-            let resultHTML = `
+            toastMsg = `
               <strong>Đăng bài thành công!</strong><br>
               ID bài đăng: ${data.postId}<br>
               Loại: ${data.type}
             `;
             if (data.type === 'video' && data.duration) {
-              resultHTML += `<br>Thời lượng: ${Math.round(data.duration)} giây`;
+              toastMsg += `<br>Thời lượng: ${Math.round(data.duration)} giây`;
             }
-            document.getElementById('result').innerHTML = resultHTML;
-            
+            // Reset form như cũ
             e.target.reset();
             document.getElementById('fileName').textContent = 'Chưa chọn file';
             document.getElementById('fileSize').textContent = '';
             document.getElementById('fileType').textContent = '';
             document.getElementById('previewContainer').innerHTML = '';
           } else {
-            document.getElementById('result').innerHTML = `
+            toastMsg = `
               <strong>Đã lên lịch bài đăng thành công!</strong><br>
               ID lịch đăng: ${data.postId}<br>
               Thời gian đăng: ${new Date(data.scheduled_time).toLocaleString()}
             `;
             loadScheduledPosts();
           }
+          showToast(toastMsg, "success");
           e.target.reset();
         } else {
           throw new Error(data.error || 'Đăng bài thất bại');
         }
       } catch (error) {
-        document.getElementById('result').className = 'status error';
-        document.getElementById('result').innerHTML = `<strong>Lỗi:</strong> ${error.message}`;
+        showToast(`<strong>Lỗi:</strong> ${error.message}`, "error");
       }
     });
 
@@ -818,16 +792,23 @@
     document.getElementById('addTemplateBtn').addEventListener('click', async () => {
       const content = document.getElementById('newTemplate').value.trim();
       if (!content) return;
-      
-      const response = await fetch('/api/comment-templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
-      });
-      
-      if (response.ok) {
-        document.getElementById('newTemplate').value = '';
-        loadTemplates();
+      try {
+        const response = await fetch('/api/comment-templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        
+        if (response.ok) {
+          document.getElementById('newTemplate').value = '';
+          loadTemplates();
+          showToast("Đã thêm comment mẫu!", "success");
+        } else {
+          const data = await response.json();
+          throw new Error(data.error || "Lỗi không xác định");
+        }
+      } catch (error) {
+        showToast(`Lỗi thêm comment mẫu: ${error.message}`, "error");
       }
     });
 
@@ -835,7 +816,7 @@
     document.getElementById('autoCommentBtn').addEventListener('click', async () => {
       const postId = document.getElementById('postSelector').value;
       if (!postId) {
-        alert('Vui lòng chọn bài đăng');
+        showToast('Vui lòng chọn bài đăng', 'error');
         return;
       }
 
@@ -849,20 +830,16 @@
         const result = await response.json();
 
         if (result.success) {
-          document.getElementById('commentResult').className = 'status success';
-          document.getElementById('commentResult').innerHTML = `
+          showToast(`
             <strong>Comment thành công!</strong><br>
             Comment ID: ${result.commentId}<br>
             Template used: ${result.templateUsed}
-          `;
+          `, "success");
         } else {
           throw new Error(result.error || result.details);
         }
       } catch (error) {
-        document.getElementById('commentResult').className = 'status error';
-        document.getElementById('commentResult').innerHTML = `
-          <strong>Lỗi:</strong> ${error.message}
-        `;
+        showToast(`<strong>Lỗi:</strong> ${error.message}`, "error");
       }
     });
 
@@ -877,11 +854,12 @@
         
         if (response.ok) {
           loadTemplates();
+          showToast("Đã xóa comment mẫu!", "success");
         } else {
           throw new Error('Xóa không thành công');
         }
       } catch (error) {
-        alert(`Lỗi: ${error.message}`);
+        showToast(`Lỗi: ${error.message}`, 'error');
       }
     }
 
@@ -943,7 +921,7 @@
   document.getElementById('autoLikeBtn').addEventListener('click', async () => {
     const postId = document.getElementById('postSelector').value;
     if (!postId) {
-      alert('Vui lòng chọn bài đăng');
+      showToast('Vui lòng chọn bài đăng', 'error');
       return;
     }
 
@@ -956,19 +934,19 @@
 
       const result = await response.json();
       if (result.success) {
-        alert('Đã like bài viết thành công!');
+        showToast('Đã like bài viết thành công!', 'success');
       } else {
         throw new Error(result.error || result.details);
       }
     } catch (error) {
-      alert('Lỗi khi like bài viết: ' + error.message);
+      showToast('Lỗi khi like bài viết: ' + error.message, "error");
     }
   });
 
   document.getElementById('autoShareBtn').addEventListener('click', async () => {
     const postId = document.getElementById('postSelector').value;
     if (!postId) {
-      alert('Vui lòng chọn bài đăng');
+      showToast('Vui lòng chọn bài đăng', 'error');
       return;
     }
 
@@ -981,12 +959,12 @@
 
       const result = await response.json();
       if (result.success) {
-        alert(`Đã share bài viết thành công! ID mới: ${result.sharedPostId}`);
+        showToast(`Đã share bài viết thành công! ID mới: ${result.sharedPostId}`, 'success');
       } else {
         throw new Error(result.error || result.details);
       }
     } catch (error) {
-      alert('Lỗi khi share bài viết: ' + error.message);
+      showToast('Lỗi khi share bài viết: ' + error.message, "error");
     }
   });
 
@@ -1012,6 +990,21 @@
     updateAiToggleUI();
   });
   updateAiToggleUI();
+
+  // Hàm showToast
+  function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    toast.innerHTML = message; // Sử dụng innerHTML thay vì innerText
+    toast.style.background = type === "error" ? "#d32f2f" : "#1976d2";
+    toast.style.color = "#fff";
+    toast.style.display = "block";
+    toast.style.opacity = 1;
+    setTimeout(() => {
+      toast.style.opacity = 0;
+      setTimeout(() => { toast.style.display = "none"; }, 300);
+    }, 2800);
+  }
+
   </script>
 </body>
 </html>
