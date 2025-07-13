@@ -542,14 +542,14 @@ app.get('/auth/user/callback', async (req, res) => {
 });
 
 // API danh sách tài khoản người dùng đã lưu
-app.get('/api/user-accounts', async (req, res) => {
+/* app.get('/api/user-accounts', async (req, res) => {
   try {
     const users = await UserAccount.findAll();
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
+});*/
 
 // Auto like
 app.post('/api/auto-like', async (req, res) => {
